@@ -1,0 +1,58 @@
+name: Demonstração de deploy de arquivos estáticos
+
+on:
+  push:
+    branches:
+    - main
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 22.18
+
+    - name: setup dependendcies
+      run: npm ci --include dev
+
+    - name: build project
+      run: npm run build
+
+    - name: Upload to GitHub Pages
+      id: deployment
+      uses: actions/upload-pages-artifact
+      with:
+        path: ./dist/apresentacao/browser
+
+  deploy:
+    needs: build
+
+    permissions:
+      pages: write
+      id-token: write
+
+    # Deploy to the github-pages environment
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    # Specify runner + deployment step
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
